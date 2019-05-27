@@ -1,4 +1,2 @@
-/Signals
-/train
-/test
-/dev
+data/*
+
