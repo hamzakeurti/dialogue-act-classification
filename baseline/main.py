@@ -7,15 +7,10 @@ folders,data_folders = utils.folders_info()
 batch_size = 100
 datasets = batcher.initialize_datasets(folders,data_folders)
 class_sample_count = [2940, 10557,5361,5618,50224]
-weights = 1/torch.Tensor(class_sample_count)
-sampler = torch.utils.data.sampler.WeightedRandomSampler(weights,batch_size)
+class_weights = 1/torch.Tensor(class_sample_count)
 
-print(len(datasets))
-print(datasets)
-train_loader = torch.utils.data.DataLoader(datasets[0],batch_size = batch_size)
+train_dataset = datasets[0]
+train_weights = [class_weights[train_dataset.__getitem__(i)[2].item()] for i in range(len(train_dataset))]
+sampler = torch.utils.data.sampler.WeightedRandomSampler(train_weights,len(train_dataset))
 
-labels = []
-for batch,(audio,text,label) in enumerate(train_loader):
-    print(batch)
-    if batch < 10:
-        print(label)
+train_loader = torch.utils.data.DataLoader(train_dataset,batch_size = batch_size,sampler = sampler)
