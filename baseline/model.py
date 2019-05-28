@@ -26,7 +26,7 @@ class LexicalModel(nn.Module):
     def forward(self, text):
         # 1. get embdding vectors
         # embedded: [num sent, batch size, emb dim, sent len]
-        embedded = self.embedding(text).permute(0,1,3,2)        
+        embedded = self.embedding(text.long()).permute(0,1,3,2)        
         
         # 2. convolution over each sentence
         conv_outputs = [] 
