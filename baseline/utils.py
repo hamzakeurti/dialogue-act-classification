@@ -74,7 +74,7 @@ def init_dictionaries(folders,data_folders):
     dict_index = 1
     for folder in folders:
         for name in data_folders[folder]:
-            data,labels,frames = parse_dadb('data\\dadb\\' + name + '.dadb')                 
+            data,labels,frames = parse_dadb('data/dadb/' + name + '.dadb')                 
 
             #update dictionary
             for sentence in data:
