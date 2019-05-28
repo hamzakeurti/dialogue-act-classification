@@ -4,25 +4,24 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torch.utils.data
 
 import utils
-from model import LexicalModel
-from logger import INIT_LOG, LOG_INFO
 import batcher
-import torch.utils.data
+from model import AcousticModel
+from logger import INIT_LOG, LOG_INFO
 
 torch.manual_seed(1234)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--max_vocab_size", default=25000, type=int, help="vocabulary size.")
-parser.add_argument("--n_labels", default=5, type=int, help="Number of labels.")
+parser.add_argument("--batch_size", default=64, type=int, help="Batch size to use during training.")
 parser.add_argument("--epochs", default=5, type=int, help="Number of epochs.")
+parser.add_argument("--num_frames", default=500, type=int, help="Number of frames per sentence.")
 parser.add_argument("--conv_channels", default=256, type=int, help="Number of 1-D convolutional channels.")
 parser.add_argument("--kernel_size", default=5, type=int, help="Convolution kernel size.")
-parser.add_argument("--embedding_dim", default=300, type=int, help="Size of word embedding.")
-parser.add_argument("--output_dim", default=128, type=int, help="Model output dim = LSTM hidden dim.")
-parser.add_argument("--context_size", default=3, type=int, help="Total number of sentences to consider.")
-parser.add_argument("--batch_size", default=64, type=int, help="Batch size to use during training.")
+parser.add_argument("--mfcc", default=13, type=int, help="Number of MFCC components.")
+parser.add_argument("--output_dim", default=128, type=int, help="Model output dim = FC output dim.")
+parser.add_argument("--n_labels", default=5, type=int, help="Number of labels.")
 parser.add_argument("--display_freq", default=1, type=int, help="Display frequency")
 parser.add_argument("--lr", default=0.001, type=float, help="Learning rate for optimizer")
 parser.add_argument("--log_file", default='', type=str, help="Log file")
@@ -31,6 +30,7 @@ args = parser.parse_args()
 print(args)
 
 INIT_LOG(args.log_file)
+
 
 # ------- Data Loaders -----------------------------------
 folders,data_folders = utils.folders_info()
@@ -49,22 +49,24 @@ test_iterator = torch.utils.data.DataLoader(test_dataset)
 valid_iterator = torch.utils.data.DataLoader(valid_dataset)
 # --------------------------------------------------------------
 
-
 device = 'cuda'
 # ---------- Model Definition -----------
-vocab_size = args.max_vocab_size 
-output_dim = args.output_dim
-num_labels = args.n_labels
+
 
 model = nn.Sequential(
-    LexicalModel(vocab_size = vocab_size, output_dim=output_dim,device=device),
-    nn.Linear(output_dim,num_labels)
+    AcousticModel(
+        num_frames = args.num_frames,
+        mfcc = args.mfcc,
+        conv_channels = args.conv_channels,
+        kernel_size = args.kernel_size,
+        output_dim = args.output_dim
+    ),
+    nn.Linear(args.output_dim,args.n_labels)
 ).to(device)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
 # ----------------------------------------
-
 
 def train(epoch, model, iterator, optimizer, criterion):
     loss_list = []
@@ -74,7 +76,7 @@ def train(epoch, model, iterator, optimizer, criterion):
 
     for i, (audio,text,label) in enumerate(iterator):
         optimizer.zero_grad()
-        predictions = model(text)
+        predictions = model(audio)
 
         loss = criterion(predictions, label.long())
         loss.backward()
@@ -92,6 +94,7 @@ def train(epoch, model, iterator, optimizer, criterion):
             loss_list.clear()
             acc_list.clear()
 
+
 def evaluate(model, iterator, criterion):
     epoch_loss = 0
     epoch_acc = 0
@@ -100,13 +103,7 @@ def evaluate(model, iterator, criterion):
 
     with torch.no_grad():
         for (audio,text,label) in iterator:
-            
-            audio = audio.to(device)
-            text = text.to(device)
-            label = label.to(device)
-
-
-            predictions = model(text.to(device))
+            predictions = model(audio)
             loss = criterion(predictions, label.long())
 
             acc = (predictions.max(1)[1] == label.long()).float().mean()
@@ -114,6 +111,8 @@ def evaluate(model, iterator, criterion):
             epoch_acc += acc.item()
 
     return epoch_loss / len(iterator), epoch_acc / len(iterator)
+
+
 
 best_acc = 0
 best_epoch = -1
