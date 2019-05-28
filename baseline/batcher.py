@@ -35,15 +35,15 @@ def initialize_tensors(folders,data_folders,vocabulary,data_dict,labels_dict,fra
 
     for folder in folders:
         try:
-            folder_audio = torch.load('data\\dataset\\audio_' + folder + '.pt')
-            folder_text = torch.load('data\\dataset\\text_' + folder + '.pt')
-            folder_labels = torch.load('data\\dataset\\labels_' + folder + '.pt')
+            folder_audio = torch.load('data/dataset/audio_' + folder + '.pt')
+            folder_text = torch.load('data/dataset/text_' + folder + '.pt')
+            folder_labels = torch.load('data/dataset/labels_' + folder + '.pt')
         except:
             audio_tensors = []
             text_tensors = []
             labels_tensor = []
             for name in data_folders[folder]:
-                audio = torch.load('data\\' + folder +'\\' + name + '.pt')
+                audio = torch.load('data/' + folder +'/' + name + '.pt')
                 data = data_dict[name]
                 frames = frames_dict[name]
                 labels = labels_dict[name]
@@ -58,9 +58,9 @@ def initialize_tensors(folders,data_folders,vocabulary,data_dict,labels_dict,fra
             folder_text = torch.stack(text_tensors)
             folder_labels = torch.tensor(labels_tensor)
 
-            torch.save(folder_audio,'data\\dataset\\audio_' + folder + '.pt')
-            torch.save(folder_text,'data\\dataset\\text_' + folder + '.pt')
-            torch.save(folder_labels,'data\\dataset\\labels_' + folder + '.pt')
+            torch.save(folder_audio,'data/dataset/audio_' + folder + '.pt')
+            torch.save(folder_text,'data/dataset/text_' + folder + '.pt')
+            torch.save(folder_labels,'data/dataset/labels_' + folder + '.pt')
         dataset = torch.utils.data.TensorDataset(folder_audio,folder_text,folder_labels)
         loader = torch.utils.data.DataLoader(dataset,batch_size = batch_size,shuffle = shuffle,drop_last = True)
 
