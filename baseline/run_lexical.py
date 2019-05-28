@@ -32,25 +32,29 @@ print(args)
 INIT_LOG(args.log_file)
 
 
-# folders,data_folders = utils.folders_info()
-# vocabulary,data_dict,labels_dict,frames_dict = utils.init_dictionaries(folders,data_folders)
+import utils
+import batcher
+import torch.utils.data
 
-# loaders = batcher.initialize_tensors(folders,data_folders,vocabulary,data_dict,labels_dict,frames_dict,100,shuffle = True)
-# train_loader = loaders[0]
+folders,data_folders = utils.folders_info()
 
-# for batch,(audio,text,label) in enumerate(train_loader):
-#     if batch<10:
-#         print(batch)
-#         print(audio.shape)
-#         print(text.shape)
-#         print(label)
+batch_size = args.batch_size
+datasets = batcher.initialize_datasets(folders,data_folders)
+class_sample_count = [2940, 10557,5361,5618,50224]
+class_weights = 1/torch.Tensor(class_sample_count)
+
+train_dataset = datasets[0]
+train_weights = [class_weights[train_dataset.__getitem__(i)[2].item()] for i in range(len(train_dataset))]
+sampler = torch.utils.data.sampler.WeightedRandomSampler(train_weights,len(train_dataset))
+
+train_loader = torch.utils.data.DataLoader(train_dataset,batch_size = batch_size,sampler = sampler)
 
 
 device = 'cuda'
 # ---------- Model Definition -----------
 vocab_size = args.max_vocab_size 
 output_dim = args.output_dim
-num_labels = args.num_labels
+num_labels = args.n_labels
 
 model = nn.Sequential([
     LexicalModel(vocab_size = vocab_size, output_dim=output_dim),
@@ -86,7 +90,6 @@ def train(epoch, model, iterator, optimizer, criterion):
             loss_list.clear()
             acc_list.clear()
 
-
 def evaluate(model, iterator, criterion):
     epoch_loss = 0
     epoch_acc = 0
@@ -103,3 +106,5 @@ def evaluate(model, iterator, criterion):
             epoch_acc += acc.item()
 
     return epoch_loss / len(iterator), epoch_acc / len(iterator)
+
+train(0,model,train_loader,criterion)
