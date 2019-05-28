@@ -27,11 +27,11 @@ def iterate_data(batch_size = 100,dir = DADB_DIR,shuffle=True):
             batch_time_spans = np.take(time_spans,indx[start_idx: end_idx])
             yield batch_sentences,batch_labels,batch_time_spans
 
-def initialize_tensors(folders,data_folders,vocabulary,data_dict,labels_dict,frames_dict,batch_size,shuffle = True):
+def initialize_datasets(folders,data_folders):
     sent_len = 50
     audio_len = 500
     labels_encoding = {'%':0, 'b':1, 'f':2, 'q':3, 's':4}
-    loaders = []
+    datasets = []
 
     for folder in folders:
         try:
@@ -39,6 +39,7 @@ def initialize_tensors(folders,data_folders,vocabulary,data_dict,labels_dict,fra
             folder_text = torch.load('data/dataset/text_' + folder + '.pt')
             folder_labels = torch.load('data/dataset/labels_' + folder + '.pt')
         except:
+            vocabulary,data_dict,labels_dict,frames_dict = utils.init_dictionaries(folders,data_folders)
             audio_tensors = []
             text_tensors = []
             labels_tensor = []
@@ -62,7 +63,5 @@ def initialize_tensors(folders,data_folders,vocabulary,data_dict,labels_dict,fra
             torch.save(folder_text,'data/dataset/text_' + folder + '.pt')
             torch.save(folder_labels,'data/dataset/labels_' + folder + '.pt')
         dataset = torch.utils.data.TensorDataset(folder_audio,folder_text,folder_labels)
-        loader = torch.utils.data.DataLoader(dataset,batch_size = batch_size,shuffle = shuffle,drop_last = True)
-
-        loaders.append(loader)
-    return loaders
+        datasets.append(dataset)
+    return datasets
