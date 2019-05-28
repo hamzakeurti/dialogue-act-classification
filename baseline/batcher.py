@@ -1,7 +1,9 @@
 import os
 import numpy as np
-from lexical import parse_lines
-
+import lexical
+import utils
+import torch
+import torch.utils.data
 DADB_DIR = 'data/dadb/'
 
 
@@ -25,3 +27,42 @@ def iterate_data(batch_size = 100,dir = DADB_DIR,shuffle=True):
             batch_time_spans = np.take(time_spans,indx[start_idx: end_idx])
             yield batch_sentences,batch_labels,batch_time_spans
 
+def initialize_tensors(folders,data_folders,vocabulary,data_dict,labels_dict,frames_dict,batch_size,shuffle = True):
+    sent_len = 50
+    audio_len = 500
+    labels_encoding = {'%':0, 'b':1, 'f':2, 'q':3, 's':4}
+    loaders = []
+
+    for folder in folders:
+        try:
+            folder_audio = torch.load('data\\dataset\\audio_' + folder + '.pt')
+            folder_text = torch.load('data\\dataset\\text_' + folder + '.pt')
+            folder_labels = torch.load('data\\dataset\\labels_' + folder + '.pt')
+        except:
+            audio_tensors = []
+            text_tensors = []
+            labels_tensor = []
+            for name in data_folders[folder]:
+                audio = torch.load('data\\' + folder +'\\' + name + '.pt')
+                data = data_dict[name]
+                frames = frames_dict[name]
+                labels = labels_dict[name]
+                for i in range(len(data)):
+                    begin_f = frames[i][0]
+                    end_f = frames[i][1]
+                    if end_f - begin_f < 501 and labels[i]!='z' and max(len(data[i][k]) for k in range(3)) < 51:
+                        audio_tensors.append(utils.padding_audio(audio[:,begin_f:end_f],500))
+                        text_tensors.append(utils.text_to_torch(data[i],sent_len))
+                        labels_tensor.append(labels_encoding[labels[i]])
+            folder_audio = torch.stack(audio_tensors)
+            folder_text = torch.stack(text_tensors)
+            folder_labels = torch.tensor(labels_tensor)
+
+            torch.save(folder_audio,'data\\dataset\\audio_' + folder + '.pt')
+            torch.save(folder_text,'data\\dataset\\text_' + folder + '.pt')
+            torch.save(folder_labels,'data\\dataset\\labels_' + folder + '.pt')
+        dataset = torch.utils.data.TensorDataset(folder_audio,folder_text,folder_labels)
+        loader = torch.utils.data.DataLoader(dataset,batch_size = batch_size,shuffle = shuffle,drop_last = True)
+
+        loaders.append(loader)
+    return loaders

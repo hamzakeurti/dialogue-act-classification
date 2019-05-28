@@ -1,4 +1,5 @@
 import librosa.core
+import torch
 
 def parse_dadb(filename):
     data = []
@@ -59,9 +60,9 @@ def folders_info():
             if len(line)>1:
                 test_set.append(line[:-1])
             line = file.readline()
-    folders_data = {'train':training_set,'dev':dev_set,'test':test_set}
+    data_folders = {'train':training_set,'dev':dev_set,'test':test_set}
     folders = ['train','dev','test']
-    return folders_data,folders
+    return folders,data_folders
 
 def init_dictionaries(folders,data_folders):
     sent_len = 50
@@ -93,5 +94,15 @@ def init_dictionaries(folders,data_folders):
             
     return vocabulary,data_dict,labels_dict,frames_dict
 
-def initialize_tensors(folders,data_folders,vocabulary,data_dict,labels_dict,frames_dict):
-    pass
+def padding_audio(tensor,length):
+    i,j = tensor.shape
+    objective = torch.zeros(i,length)
+    objective[:,:j] = tensor
+    return objective
+
+def text_to_torch(text_list,sent_len):
+    sentences = [torch.zeros(sent_len) for i in range(3)]
+    for i in range(3):
+        text = text_list[i]
+        sentences[i][:len(text)] = torch.tensor(text)
+    return torch.stack(sentences)
