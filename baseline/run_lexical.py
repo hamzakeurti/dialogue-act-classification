@@ -17,14 +17,14 @@ torch.manual_seed(1234)
 parser = argparse.ArgumentParser()
 parser.add_argument("--max_vocab_size", default=25000, type=int, help="vocabulary size.")
 parser.add_argument("--n_labels", default=5, type=int, help="Number of labels.")
-parser.add_argument("--epochs", default=5, type=int, help="Number of epochs.")
+parser.add_argument("--epochs", default=25, type=int, help="Number of epochs.")
 parser.add_argument("--conv_channels", default=256, type=int, help="Number of 1-D convolutional channels.")
 parser.add_argument("--kernel_size", default=5, type=int, help="Convolution kernel size.")
 parser.add_argument("--embedding_dim", default=300, type=int, help="Size of word embedding.")
 parser.add_argument("--output_dim", default=128, type=int, help="Model output dim = LSTM hidden dim.")
 parser.add_argument("--context_size", default=3, type=int, help="Total number of sentences to consider.")
 parser.add_argument("--batch_size", default=64, type=int, help="Batch size to use during training.")
-parser.add_argument("--display_freq", default=24, type=int, help="Display frequency")
+parser.add_argument("--display_freq", default=292, type=int, help="Display frequency")
 parser.add_argument("--lr", default=0.001, type=float, help="Learning rate for optimizer")
 parser.add_argument("--log_file", default='', type=str, help="Log file")
 
@@ -68,7 +68,7 @@ valid_iterator = torch.utils.data.DataLoader(valid_dataset)
 
 
 # ---------- Model Definition -----------
-vocab_size = pretrained_embeddings.shape[0] + 1
+vocab_size = pretrained_embeddings.shape[0]
 output_dim = args.output_dim
 num_labels = args.n_labels
 
