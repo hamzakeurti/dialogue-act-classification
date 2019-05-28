@@ -46,6 +46,7 @@ except:
     vocabulary,_,_,_ = utils.init_dictionaries(folders,data_folders)
     with open(vocabulary_filename,'w') as vocabulary_file:
             vocabulary_file.write(json.dumps(vocabulary))
+
 # getting the pretrained embeddings
 pretrained_embeddings = utils.pretrain_embedding(vocabulary).to(device)
 
@@ -67,7 +68,7 @@ valid_iterator = torch.utils.data.DataLoader(valid_dataset)
 
 
 # ---------- Model Definition -----------
-vocab_size = pretrained_embeddings.shape[0]
+vocab_size = pretrained_embeddings.shape[0] + 1
 output_dim = args.output_dim
 num_labels = args.n_labels
 
@@ -77,7 +78,7 @@ model = nn.Sequential(
 
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=args.lr)
+optimizer = optim.SGD(model.parameters(), lr=args.lr)
 # ----------------------------------------
 
 
