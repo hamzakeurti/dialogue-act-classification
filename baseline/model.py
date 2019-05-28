@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 
 class LexicalModel(nn.Module):
-    def __init__(self, vocab_size, embedding_dim = 300, conv_channels=256, output_dim=128, kernel_size=5, context_size=3, device='cpu'):
+    def __init__(self, vocab_size, embedding_dim = 300, conv_channels=256, output_dim=128, kernel_size=5, context_size=3, device='cpu',init_embedding = torch.zeros((vocab_size,300))):
         super(LexicalModel, self).__init__()
         self.vocab_size = vocab_size          # sentence_length
         self.context_size = context_size    # Number of sentences provided as context including current sentence.
@@ -23,6 +23,7 @@ class LexicalModel(nn.Module):
         # self.fc = nn.Linear(hidden_dim, output_dim)
         self.device = device
 
+        self.embedding.weight.data.copy_(init_embedding)
     def forward(self, text):
         # 1. get embdding vectors
         # embedded: [num sent, batch size, emb dim, sent len]

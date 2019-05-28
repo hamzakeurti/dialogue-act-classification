@@ -10,6 +10,7 @@ from model import LexicalModel
 from logger import INIT_LOG, LOG_INFO
 import batcher
 import torch.utils.data
+import json
 
 torch.manual_seed(1234)
 
@@ -23,7 +24,7 @@ parser.add_argument("--embedding_dim", default=300, type=int, help="Size of word
 parser.add_argument("--output_dim", default=128, type=int, help="Model output dim = LSTM hidden dim.")
 parser.add_argument("--context_size", default=3, type=int, help="Total number of sentences to consider.")
 parser.add_argument("--batch_size", default=64, type=int, help="Batch size to use during training.")
-parser.add_argument("--display_freq", default=1, type=int, help="Display frequency")
+parser.add_argument("--display_freq", default=24, type=int, help="Display frequency")
 parser.add_argument("--lr", default=0.001, type=float, help="Learning rate for optimizer")
 parser.add_argument("--log_file", default='', type=str, help="Log file")
 
@@ -31,10 +32,24 @@ args = parser.parse_args()
 print(args)
 
 INIT_LOG(args.log_file)
+device = 'cuda'
 
 # ------- Data Loaders -----------------------------------
 folders,data_folders = utils.folders_info()
 
+# Initialize vocabulary
+vocabulary_filename = 'data/vocabulary.json'
+try:
+    vocabulary_file = open(vocabulary_filename,'r')
+    vocabulary = json.loads(vocabulary_file.read())
+except:
+    vocabulary,_,_,_ = utils.init_dictionaries(folders,data_folders)
+    with open(vocabulary_filename,'w') as vocabulary_file:
+            vocabulary_file.write(json.dumps(vocabulary))
+# getting the pretrained embeddings
+pretrained_embeddings = utils.pretrain_embedding(vocabulary).to(device)
+
+# Initialize dataset loaders
 batch_size = args.batch_size
 datasets = batcher.initialize_datasets(folders,data_folders)
 class_sample_count = [2940, 10557,5361,5618,50224]
@@ -51,16 +66,15 @@ valid_iterator = torch.utils.data.DataLoader(valid_dataset)
 # --------------------------------------------------------------
 
 
-device = 'cuda'
 # ---------- Model Definition -----------
-vocab_size = args.max_vocab_size 
+vocab_size = pretrained_embeddings.shape[0]
 output_dim = args.output_dim
 num_labels = args.n_labels
 
 model = nn.Sequential(
-    LexicalModel(vocab_size = vocab_size, output_dim=output_dim,device=device),
-    nn.Linear(output_dim,num_labels))
-# ).to(device)
+    LexicalModel(vocab_size = vocab_size, output_dim=output_dim,device=device,init_embedding = pretrained_embeddings),
+    nn.Linear(output_dim,num_labels)).to(device)
+
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
@@ -74,6 +88,7 @@ def train(epoch, model, iterator, optimizer, criterion):
     model.train()
 
     for i, (audio,text,label) in enumerate(iterator):
+        audio,text,label = audio.to(device),text.to(device),label.to(device)
         optimizer.zero_grad()
         predictions = model(text)
 
@@ -107,7 +122,7 @@ def evaluate(model, iterator, criterion):
             label = label.to(device)
 
 
-            predictions = model(text.to(device))
+            predictions = model(text)
             loss = criterion(predictions, label.long())
 
             acc = (predictions.max(1)[1] == label.long()).float().mean()
@@ -129,9 +144,9 @@ for epoch in range(1, args.epochs + 1):
     if valid_acc > best_acc:
         best_acc = valid_acc
         best_epoch = epoch
-        torch.save(model.state_dict(), 'best-model-%s.pth' % args.cell_type)
+        torch.save(model.state_dict(), 'best-model.pth')
 
 LOG_INFO('Test best model @ Epoch %02d' % best_epoch)
-model.load_state_dict(torch.load('best-model-%s.pth' % args.cell_type))
+model.load_state_dict(torch.load('best-model.pth'))
 test_loss, test_acc = evaluate(model, test_iterator, criterion)
 LOG_INFO('Finally, test loss = %.4f, test acc = %.4f' % (test_loss, test_acc))

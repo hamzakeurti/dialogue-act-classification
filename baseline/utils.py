@@ -106,3 +106,22 @@ def text_to_torch(text_list,sent_len):
         text = text_list[i]
         sentences[i][:len(text)] = torch.tensor(text)
     return torch.stack(sentences)
+
+def pretrain_embedding(vocabulary):
+    embedding_dic = {}
+    pretrained_embedding = torch.zeros((len(vocabulary),300))
+    with open('data/embedding/glove.6B.300d.txt',encoding='utf8') as file:
+        line = file.readline()
+        while line:
+            list_split = line.split(' ')
+            key = list_split[0]
+            try:
+                pretrained_embedding[vocabulary[key]] = torch.tensor(list_split[1:])
+                print(vocabulary[key])
+                print(key)
+                print(pretrained_embedding[vocabulary[key]])
+            except:
+                pass
+            line = file.readline()
+    return pretrained_embedding
+        

@@ -6,7 +6,7 @@ import torch
 import torch.utils.data
 DADB_DIR = 'data/dadb/'
 
-
+'''
 def iterate_data(batch_size = 100,dir = DADB_DIR,shuffle=True):
     files_list=os.listdir(dir)
     for file in files_list:
@@ -26,6 +26,7 @@ def iterate_data(batch_size = 100,dir = DADB_DIR,shuffle=True):
             batch_labels = np.take(labels,indx[start_idx: end_idx])
             batch_time_spans = np.take(time_spans,indx[start_idx: end_idx])
             yield batch_sentences,batch_labels,batch_time_spans
+'''
 
 def initialize_datasets(folders,data_folders):
     sent_len = 50
@@ -33,7 +34,7 @@ def initialize_datasets(folders,data_folders):
     labels_encoding = {'%':0, 'b':1, 'f':2, 'q':3, 's':4}
     datasets = []
 
-    for folder in folders[1:]:
+    for folder in folders:
         try:
             folder_audio = torch.load('data/dataset/audio_' + folder + '.pt')
             folder_text = torch.load('data/dataset/text_' + folder + '.pt')
