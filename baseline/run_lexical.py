@@ -45,6 +45,7 @@ train_weights = [class_weights[train_dataset.__getitem__(i)[2].item()] for i in 
 sampler = torch.utils.data.sampler.WeightedRandomSampler(train_weights,len(train_dataset))
 
 train_iterator = torch.utils.data.DataLoader(train_dataset,batch_size = batch_size,sampler = sampler)
+# train_iterator = torch.utils.data.DataLoader(test_dataset,batch_size=args.batch_size)
 test_iterator = torch.utils.data.DataLoader(test_dataset)
 valid_iterator = torch.utils.data.DataLoader(valid_dataset)
 # --------------------------------------------------------------
@@ -58,8 +59,8 @@ num_labels = args.n_labels
 
 model = nn.Sequential(
     LexicalModel(vocab_size = vocab_size, output_dim=output_dim,device=device),
-    nn.Linear(output_dim,num_labels)
-).to(device)
+    nn.Linear(output_dim,num_labels))
+# ).to(device)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=args.lr)

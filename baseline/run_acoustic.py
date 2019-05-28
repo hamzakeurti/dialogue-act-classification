@@ -61,9 +61,10 @@ model = nn.Sequential(
         kernel_size = args.kernel_size,
         output_dim = args.output_dim
     ),
-    nn.Linear(args.output_dim,args.n_labels)
-).to(device)
+    nn.Linear(args.output_dim,args.n_labels))
+# ).to(device)
 
+ 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
 # ----------------------------------------

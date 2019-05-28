@@ -26,15 +26,15 @@ class LexicalModel(nn.Module):
     def forward(self, text):
         # 1. get embdding vectors
         # embedded: [num sent, batch size, emb dim, sent len]
-        embedded = self.embedding(text.long()).permute(0,1,3,2)        
-        
+        embedded = self.embedding(text.long()).permute(1,0,3,2)        
+
         # 2. convolution over each sentence
         conv_outputs = [] 
         for i in range(self.context_size):
             conv_outputs.append(self.conv(embedded[i]))
         # conv_output: [num sent, batch size, num channels, sent len]
         conv_output = torch.stack(conv_outputs)
-        
+
         # 3. MaxPool the whole sentence into a single vector of dim num channels
         # max_output: [num sent, batch size, num_channels]
         max_output,_ = torch.max(conv_output,dim = 3)  #max over sentence length
@@ -42,9 +42,10 @@ class LexicalModel(nn.Module):
         # 4. LSTM the 3 sentences to determine attention 
         # lstm_output: [num sent, batch size, output dim]
         lstm_output, _ = self.lstm(max_output)
-
+        
         # 5. Sum the resulting vectors
-        return torch.sum(lstm_output,dim=0)
+        ret = torch.sum(lstm_output,dim=0)
+        return ret
 
  
 class AcousticModel(nn.Module):
