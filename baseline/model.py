@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 
 class LexicalModel(nn.Module):
-    def __init__(self, input_dim, embedding_dim, conv_channels, lstm_hidden_dim, kernel_size, context_size, device):
+    def __init__(self, input_dim, embedding_dim = 300, conv_channels=256, lstm_hidden_dim=128, kernel_size=5, context_size=3, device='cpu'):
         super(LexicalModel, self).__init__()
         self.input_dim = input_dim          # sentence_length
         self.context_size = context_size    # Number of sentences provided as context including current sentence.
@@ -47,3 +47,34 @@ class LexicalModel(nn.Module):
         return torch.sum(lstm_output,dim=0)
 
  
+class AcousticModel(nn.Module):
+    def __init__(self, num_frames = 500, mfcc=13, conv_channels=128, kernel_size = 5,output_dim = 128, device='cpu'):
+        super(AcousticModel, self).__init__()
+        self.num_frames = num_frames
+        self.mfcc = mfcc
+        self.conv_channels = conv_channels
+        self.kernel_size = kernel_size
+        self.output_dim = output_dim
+        self.device = device
+
+        self.conv = nn.Conv1d(self.mfcc,self.conv_channels,self.kernel_size)
+
+        self.fc = nn.Linear(self.conv_channels, self.output_dim)
+        self.device = device
+
+    def forward(self, input):
+        # input: [bacth size, mfcc, num frames]
+
+        # 1. convolution
+        # conv_output: [batch size, num channels, num frames]
+        conv_output = self.conv(input)
+
+        # 2. MaxPool over all frames into a single vector of dim num channels
+        # max_output: [batch size, num_channels]
+        max_output,_ = torch.max(conv_output,dim = 2)  #max over sentence length
+
+        # 3. Fully connected layer
+        # fc_output: [num sent, batch size, num_channels]
+        fc_output = self.fc(max_output)
+        
+        return fc_output
