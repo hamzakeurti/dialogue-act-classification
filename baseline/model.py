@@ -2,22 +2,22 @@ import torch.nn as nn
 import torch
 
 class LexicalModel(nn.Module):
-    def __init__(self, input_dim, embedding_dim = 300, conv_channels=256, lstm_hidden_dim=128, kernel_size=5, context_size=3, device='cpu'):
+    def __init__(self, vocab_size, embedding_dim = 300, conv_channels=256, output_dim=128, kernel_size=5, context_size=3, device='cpu'):
         super(LexicalModel, self).__init__()
-        self.input_dim = input_dim          # sentence_length
+        self.vocab_size = vocab_size          # sentence_length
         self.context_size = context_size    # Number of sentences provided as context including current sentence.
         self.embedding_dim = embedding_dim
         self.conv_channels = conv_channels
-        self.lstm_hidden_dim = lstm_hidden_dim 
+        self.output_dim = output_dim 
         self.kernel_size = kernel_size
 
-        self.embedding = nn.Embedding(input_dim, embedding_dim)
+        self.embedding = nn.Embedding(vocab_size, embedding_dim)
 
         self.conv = nn.Conv1d(self.embedding_dim,self.conv_channels,self .kernel_size)
 
         self.lstm = nn.LSTM(
             input_size = self.conv_channels,
-            hidden_size = self.lstm_hidden_dim,
+            hidden_size = self.output_dim,
             batch_first = False) 
 
         # self.fc = nn.Linear(hidden_dim, output_dim)
@@ -40,7 +40,7 @@ class LexicalModel(nn.Module):
         max_output,_ = torch.max(conv_output,dim = 3)  #max over sentence length
 
         # 4. LSTM the 3 sentences to determine attention 
-        # lstm_output: [num sent, batch size, num_channels]
+        # lstm_output: [num sent, batch size, output dim]
         lstm_output, _ = self.lstm(max_output)
 
         # 5. Sum the resulting vectors
@@ -76,5 +76,5 @@ class AcousticModel(nn.Module):
         # 3. Fully connected layer
         # fc_output: [num sent, batch size, num_channels]
         fc_output = self.fc(max_output)
-        
+
         return fc_output
