@@ -12,7 +12,7 @@ def parse_lines(lines):
     labels = []
     time_spans = []
     for line in lines:
-        words,labels,begin_time,end_time = parse_line(line)
+        words,label,begin_time,end_time = parse_line(line)
         sentences.append(words)
         labels.append(label)
         time_spans.append((begin_time,end_time))
