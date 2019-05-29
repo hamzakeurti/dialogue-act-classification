@@ -80,3 +80,18 @@ class AcousticModel(nn.Module):
         fc_output = self.fc(max_output)
 
         return fc_output
+
+
+class LexicalAcousticModel(nn.Module):
+    def __init__(self,lexical_model,acoustic_model,device):
+        super(LexicalAcousticModel, self).__init__()
+        self.lexical = lexical_model
+        self.acoustic = acoustic_model
+        self.output_dim = self.lexical.output_dim + self.acoustic.output_dim
+        self.device = device
+
+    def forward(self,text,audio):
+        lexical_output = self.lexical(text)
+        acoustic_output = self.acoustic(audio)
+        return torch.cat((lexical_output,acoustic_output))
+
