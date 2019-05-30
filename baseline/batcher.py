@@ -34,7 +34,7 @@ def initialize_datasets(folders,data_folders):
     labels_encoding = {'%':0, 'b':1, 'f':2, 'q':3, 's':4}
     datasets = []
 
-    for folder in folders[1:]:
+    for folder in folders:
         try:
             folder_audio = torch.load('data/dataset/audio_' + folder + '.pt')
             folder_text = torch.load('data/dataset/text_' + folder + '.pt')
