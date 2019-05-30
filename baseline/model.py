@@ -68,10 +68,11 @@ class LexicalModel(nn.Module):
             hidden_size = self.output_dim,
             batch_first = False) 
 
-        self.attention_fc = nn.Linear(self.output_dim, self.output_dim)
+        self.attention_fc = nn.Linear(self.output_dim, 1)
         self.device = device
         
         self.embedding.weight.data.copy_(init_embedding)
+        self.embedding.weight.requires_grad = False
 
         
     def forward(self, text):
@@ -98,11 +99,11 @@ class LexicalModel(nn.Module):
         activations = [] 
         for i in range(self.context_size):
             activations.append(self.attention_fc(lstm_output[i]))
-        # activations: [num sent, batch size, num channels, sent len]
+        # activations: [num sent, batch size, 1]
         activation = torch.stack(activations)
 
         # 6. Compute attention
-        attention = nn.Softmax(activation,dim=0)
+        attention = nn.Softmax(dim=0)(activation)
 
         # 7. Sum the resulting vectors weighted by attention
         ret = torch.sum((attention * lstm_output),dim=0)
