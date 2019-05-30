@@ -2,7 +2,6 @@ import argparse
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 
 import utils
@@ -19,6 +18,7 @@ parser.add_argument("--n_labels", default=5, type=int, help="Number of labels.")
 parser.add_argument("--epochs", default=25, type=int, help="Number of epochs.")
 parser.add_argument("--data_balancing",default=0,type=int,help="1 if balancing the training data")
 parser.add_argument("--dropout",default=0.5,type=float,help="dropout rate for final layer, default 0.5, put 0 for no dropout")
+parser.add_argument("--optimizer",default="SGD",type=str,help="optimizer, Adam or SGD")
 
 parser.add_argument("--l_conv_channels", default=256, type=int, help="Number of 1-D convolutional channels.")
 parser.add_argument("--l_kernel_size", default=5, type=int, help="Convolution kernel size.")
@@ -104,7 +104,10 @@ acoustic_model = AcousticModel(
 model = LexicalAcousticModel(lexical_model=lexical_model,acoustic_model=acoustic_model,num_labels = num_labels,dropout = args.dropout).to(device)
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=args.lr)
+if args.optimizer!="Adam":
+    optimizer = optim.SGD(model.parameters(), lr=args.lr)
+else:
+    optimizer = optim.Adam(model.parameters(),lr=args.lr)
 # =======================================================
 
 
@@ -171,9 +174,9 @@ for epoch in range(1, args.epochs + 1):
     if valid_acc > best_acc:
         best_acc = valid_acc
         best_epoch = epoch
-        torch.save(model.state_dict(), 'best-model_dropout.pth')
+        torch.save(model.state_dict(), 'best-model.pth')
 
 LOG_INFO('Test best model @ Epoch %02d' % best_epoch)
-model.load_state_dict(torch.load('best-model_dropout.pth'))
+model.load_state_dict(torch.load('best-model.pth'))
 test_loss, test_acc = evaluate(model, test_iterator, criterion)
 LOG_INFO('Finally, test loss = %.4f, test acc = %.4f' % (test_loss, test_acc))
