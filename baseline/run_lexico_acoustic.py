@@ -43,6 +43,7 @@ device = 'cuda'
 folders,data_folders = utils.folders_info()
 
 # Initialize vocabulary
+'''
 vocabulary_filename = 'data/vocabulary.json'
 try:
     vocabulary_file = open(vocabulary_filename,'r')
@@ -53,6 +54,8 @@ except:
             vocabulary_file.write(json.dumps(vocabulary))
 
 # getting the pretrained embeddings
+'''
+vocabulary = {}
 pretrained_embeddings = utils.pretrain_embedding(vocabulary).to(device)
 del vocabulary
 
@@ -62,7 +65,7 @@ datasets = batcher.initialize_datasets(folders,data_folders)
 class_sample_count = [2940, 10557,5361,5618,50224]
 class_weights = 1/torch.Tensor(class_sample_count)
 
-train_dataset,test_dataset,valid_dataset = datasets[0],datasets[1],datasets[2]
+train_dataset,test_dataset,valid_dataset = datasets[0],datasets[1],datasets[1]
 train_weights = [class_weights[train_dataset.__getitem__(i)[2].item()] for i in range(len(train_dataset))]
 sampler = torch.utils.data.sampler.WeightedRandomSampler(train_weights,len(train_dataset))
 

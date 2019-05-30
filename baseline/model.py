@@ -146,7 +146,7 @@ class LexicalAcousticModel(nn.Module):
         super(LexicalAcousticModel, self).__init__()
         self.lexical = lexical_model
         self.acoustic = acoustic_model
-        self.output_dim = self.lexical.output_dim + self.acoustic.output_dim
+        self.output_dim = self.lexical.output_dim
         self.num_labels = num_labels
 
         self.linear = nn.Linear(self.output_dim,self.num_labels)
