@@ -33,6 +33,10 @@ parser.add_argument("--display_freq", default=292, type=int, help="Display frequ
 parser.add_argument("--lr", default=0.001, type=float, help="Learning rate for optimizer")
 parser.add_argument("--log_file", default='', type=str, help="Log file")
 
+parser.add_argument("--embedding",default=1,type=int,help="1 if using pretrained embedding")
+parser.add_argument("--data_balancing",default=0,type=int,help="1 if balancing the training data")
+parser.add_argument("--dropout",default=0.5,type=float,help="dropout rate for final layer, default 0.5, put 0 for no dropout")
+
 args = parser.parse_args()
 print(args)
 
@@ -43,19 +47,19 @@ device = 'cuda'
 folders,data_folders = utils.folders_info()
 
 # Initialize vocabulary
-'''
+
 vocabulary_filename = 'data/vocabulary.json'
-try:
-    vocabulary_file = open(vocabulary_filename,'r')
-    vocabulary = json.loads(vocabulary_file.read())
-except:
-    vocabulary,_,_,_ = utils.init_dictionaries(folders,data_folders)
-    with open(vocabulary_filename,'w') as vocabulary_file:
-            vocabulary_file.write(json.dumps(vocabulary))
+vocabulary = {}
+if args.embedding==1:
+    try:
+        vocabulary_file = open(vocabulary_filename,'r')
+        vocabulary = json.loads(vocabulary_file.read())
+    except:
+        vocabulary,_,_,_ = utils.init_dictionaries(folders,data_folders)
+        with open(vocabulary_filename,'w') as vocabulary_file:
+                vocabulary_file.write(json.dumps(vocabulary))
 
 # getting the pretrained embeddings
-'''
-vocabulary = {}
 pretrained_embeddings = utils.pretrain_embedding(vocabulary).to(device)
 del vocabulary
 
@@ -65,13 +69,14 @@ datasets = batcher.initialize_datasets(folders,data_folders)
 class_sample_count = [2940, 10557,5361,5618,50224]
 class_weights = 1/torch.Tensor(class_sample_count)
 
-#Temporary smaller train dataset
-train_dataset,test_dataset,valid_dataset = datasets[0],datasets[1],datasets[1]
+train_dataset,test_dataset,valid_dataset = datasets[0],datasets[1],datasets[2]
 train_weights = [class_weights[train_dataset.__getitem__(i)[2].item()] for i in range(len(train_dataset))]
-sampler = torch.utils.data.sampler.WeightedRandomSampler(train_weights,len(train_dataset))
+
+sampler = None
+if args.data_balancing==1:
+    sampler = torch.utils.data.sampler.WeightedRandomSampler(train_weights,len(train_dataset))
 
 train_iterator = torch.utils.data.DataLoader(train_dataset,batch_size = batch_size,sampler = sampler)
-# train_iterator = torch.utils.data.DataLoader(test_dataset,batch_size=args.batch_size)
 test_iterator = torch.utils.data.DataLoader(test_dataset)
 valid_iterator = torch.utils.data.DataLoader(valid_dataset)
 # --------------------------------------------------------------

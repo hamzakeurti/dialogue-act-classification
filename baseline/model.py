@@ -94,17 +94,21 @@ class AcousticModel(nn.Module):
 
 
 class LexicalAcousticModel(nn.Module):
-    def __init__(self,lexical_model,acoustic_model,num_labels):
+    def __init__(self,lexical_model,acoustic_model,num_labels,dropout):
         super(LexicalAcousticModel, self).__init__()
         self.lexical = lexical_model
         self.acoustic = acoustic_model
         self.output_dim = self.lexical.output_dim + self.acoustic.output_dim
         self.num_labels = num_labels
 
+        
+        self.relu = nn.Relu()
+        self.dropout = nn.Dropout(p=dropout)
         self.linear = nn.Linear(self.output_dim,self.num_labels)
     def forward(self,text,audio):
         lexical_output = self.lexical(text)
         acoustic_output = self.acoustic(audio)
         merged_output = torch.cat((lexical_output,acoustic_output),dim=1)
+        merged_output = self.dropout(self.relu(merged_output))
         return self.linear(merged_output)
 
