@@ -17,25 +17,24 @@ torch.manual_seed(1234)
 parser = argparse.ArgumentParser()
 parser.add_argument("--n_labels", default=5, type=int, help="Number of labels.")
 parser.add_argument("--epochs", default=25, type=int, help="Number of epochs.")
-parser.add_argument("--l_max_vocab_size", default=25000, type=int, help="vocabulary size.")
+parser.add_argument("--data_balancing",default=0,type=int,help="1 if balancing the training data")
+parser.add_argument("--dropout",default=0.5,type=float,help="dropout rate for final layer, default 0.5, put 0 for no dropout")
+
 parser.add_argument("--l_conv_channels", default=256, type=int, help="Number of 1-D convolutional channels.")
 parser.add_argument("--l_kernel_size", default=5, type=int, help="Convolution kernel size.")
-parser.add_argument("--l_embedding_dim", default=300, type=int, help="Size of word embedding.")
 parser.add_argument("--l_output_dim", default=128, type=int, help="Model output dim = LSTM hidden dim.")
-parser.add_argument("--l_context_size", default=3, type=int, help="Total number of sentences to consider.")
+parser.add_argument("--l_embedding",default=1,type=int,help="1 if using pretrained embedding")
+
 parser.add_argument("--a_num_frames", default=500, type=int, help="Number of frames per sentence.")
 parser.add_argument("--a_conv_channels", default=256, type=int, help="Number of 1-D convolutional channels.")
 parser.add_argument("--a_kernel_size", default=5, type=int, help="Convolution kernel size.")
 parser.add_argument("--a_mfcc", default=13, type=int, help="Number of MFCC components.")
 parser.add_argument("--a_output_dim", default=128, type=int, help="Model output dim = FC output dim.")
+
 parser.add_argument("--batch_size", default=64, type=int, help="Batch size to use during training.")
 parser.add_argument("--display_freq", default=292, type=int, help="Display frequency")
 parser.add_argument("--lr", default=0.001, type=float, help="Learning rate for optimizer")
 parser.add_argument("--log_file", default='', type=str, help="Log file")
-
-parser.add_argument("--embedding",default=1,type=int,help="1 if using pretrained embedding")
-parser.add_argument("--data_balancing",default=0,type=int,help="1 if balancing the training data")
-parser.add_argument("--dropout",default=0.5,type=float,help="dropout rate for final layer, default 0.5, put 0 for no dropout")
 
 args = parser.parse_args()
 print(args)
@@ -50,7 +49,7 @@ folders,data_folders = utils.folders_info()
 
 vocabulary_filename = 'data/vocabulary.json'
 vocabulary = {}
-if args.embedding==1:
+if args.l_embedding==1:
     try:
         vocabulary_file = open(vocabulary_filename,'r')
         vocabulary = json.loads(vocabulary_file.read())
@@ -102,7 +101,7 @@ acoustic_model = AcousticModel(
     output_dim = args.a_output_dim
     ).to(device)
 # ------------------- LAModel ------------------------------
-model = LexicalAcousticModel(lexical_model=lexical_model,acoustic_model=acoustic_model,num_labels = num_labels).to(device)
+model = LexicalAcousticModel(lexical_model=lexical_model,acoustic_model=acoustic_model,num_labels = num_labels,dropout = args.dropout).to(device)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=args.lr)
