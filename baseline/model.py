@@ -50,7 +50,7 @@ import torch
 
 
 class LexicalModel(nn.Module):
-    def __init__(self, vocab_size, embedding_dim = 300, conv_channels=256, output_dim=128, kernel_size=5, context_size=3, device='cpu',init_embedding = torch.randn((14600,300))):
+    def __init__(self, vocab_size, embedding_dim = 300, conv_channels=256, output_dim=128, kernel_size=5, context_size=3,init_embedding = torch.randn((14600,300))):
         super(LexicalModel, self).__init__()
         self.vocab_size = vocab_size          # sentence_length
         self.context_size = context_size    # Number of sentences provided as context including current sentence.
@@ -69,7 +69,6 @@ class LexicalModel(nn.Module):
             batch_first = False) 
 
         self.attention_fc = nn.Linear(self.output_dim, 1)
-        self.device = device
         
         self.embedding.weight.data.copy_(init_embedding)
         self.embedding.weight.requires_grad = False
@@ -112,19 +111,17 @@ class LexicalModel(nn.Module):
 
  
 class AcousticModel(nn.Module):
-    def __init__(self, num_frames = 500, mfcc=13, conv_channels=128, kernel_size = 5,output_dim = 128, device='cpu'):
+    def __init__(self, num_frames = 500, mfcc=13, conv_channels=128, kernel_size = 5,output_dim = 128):
         super(AcousticModel, self).__init__()
         self.num_frames = num_frames
         self.mfcc = mfcc
         self.conv_channels = conv_channels
         self.kernel_size = kernel_size
         self.output_dim = output_dim
-        self.device = device
 
         self.conv = nn.Conv1d(self.mfcc,self.conv_channels,self.kernel_size)
 
         self.fc = nn.Linear(self.conv_channels, self.output_dim)
-        self.device = device
 
     def forward(self, input):
         # input: [bacth size, mfcc, num frames]
@@ -145,15 +142,17 @@ class AcousticModel(nn.Module):
 
 
 class LexicalAcousticModel(nn.Module):
-    def __init__(self,lexical_model,acoustic_model,device):
+    def __init__(self,lexical_model,acoustic_model,num_labels):
         super(LexicalAcousticModel, self).__init__()
         self.lexical = lexical_model
         self.acoustic = acoustic_model
         self.output_dim = self.lexical.output_dim + self.acoustic.output_dim
-        self.device = device
+        self.num_labels = num_labels
 
+        self.linear = nn.Linear(self.output_dim,self.num_labels)
     def forward(self,text,audio):
         lexical_output = self.lexical(text)
         acoustic_output = self.acoustic(audio)
-        return torch.cat((lexical_output,acoustic_output))
+        merged_output = torch.cat((lexical_output,acoustic_output))
+        return self.linear(merged_output)
 

@@ -60,7 +60,7 @@ train_dataset,test_dataset,valid_dataset = datasets[0],datasets[1],datasets[2]
 train_weights = [class_weights[train_dataset.__getitem__(i)[2].item()] for i in range(len(train_dataset))]
 sampler = torch.utils.data.sampler.WeightedRandomSampler(train_weights,len(train_dataset))
 
-train_iterator = torch.utils.data.DataLoader(train_dataset,batch_size = batch_size,sampler = sampler)
+train_iterator = torch.utils.data.DataLoader(train_dataset,batch_size = batch_size) #,sampler = sampler
 # train_iterator = torch.utils.data.DataLoader(test_dataset,batch_size=args.batch_size)
 test_iterator = torch.utils.data.DataLoader(test_dataset)
 valid_iterator = torch.utils.data.DataLoader(valid_dataset)

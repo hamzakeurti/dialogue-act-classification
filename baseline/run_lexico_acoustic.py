@@ -54,6 +54,7 @@ except:
 
 # getting the pretrained embeddings
 pretrained_embeddings = utils.pretrain_embedding(vocabulary).to(device)
+del vocabulary
 
 # Initialize dataset loaders
 batch_size = args.batch_size
@@ -80,9 +81,8 @@ vocab_size = pretrained_embeddings.shape[0]
 lexical_model = LexicalModel(
         vocab_size = vocab_size, 
         output_dim=args.l_output_dim,
-        device=device,
         init_embedding = pretrained_embeddings
-        )
+        ).to(device)
 
 # ------------------ Acoustic Model ---------------------
 acoustic_model = AcousticModel(
@@ -91,14 +91,9 @@ acoustic_model = AcousticModel(
     conv_channels = args.a_conv_channels,
     kernel_size = args.a_kernel_size,
     output_dim = args.a_output_dim
-    )
+    ).to(device)
 # ------------------- LAModel ------------------------------
-la_model = LexicalAcousticModel(lexical_model=lexical_model,acoustic_model=acoustic_model,device = device)
-
-model = nn.Sequential((
-    la_model,
-    nn.Linear(la_model.output_dim,num_labels)
-))
+model = LexicalAcousticModel(lexical_model=lexical_model,acoustic_model=acoustic_model,num_labels = num_labels).to(device)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=args.lr)
