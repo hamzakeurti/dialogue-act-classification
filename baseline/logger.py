@@ -20,4 +20,3 @@ def LOG_INFO(msg):
         print('[' + display_now + ']' + ' ' + msg)
     else:
         logging.info('[' + display_now + ']' + ' ' + msg)
-

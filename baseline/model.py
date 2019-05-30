@@ -102,7 +102,7 @@ class LexicalAcousticModel(nn.Module):
         self.num_labels = num_labels
 
         
-        self.relu = nn.Relu()
+        self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p=dropout)
         self.linear = nn.Linear(self.output_dim,self.num_labels)
     def forward(self,text,audio):
