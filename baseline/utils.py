@@ -2,6 +2,7 @@ import librosa.core
 import torch
 
 def parse_dadb(filename):
+    # Parsing the dadb files 
     data = []
     labels = []
     frames = []
@@ -24,6 +25,7 @@ def parse_dadb(filename):
     return data,labels,frames
 
 def mapping_labels(label):
+    # Maps the labels to the main labels used in training
     if '|' in label:
         for i in range(len(label)):
             if label[i]=='|':
@@ -39,6 +41,7 @@ def mapping_labels(label):
     return label
 
 def folders_info():
+    # Generates folders = ['train','dev','test'] and data_folders a dictionary which links the folder names
     training_set = []
     dev_set = []
     test_set = []
@@ -65,6 +68,8 @@ def folders_info():
     return folders,data_folders
 
 def init_dictionaries(folders,data_folders):
+    # Generate vocabulary file which attributes to every word a number
+    # Creates dictionaries which contain the used data for every file
     sent_len = 50
     audio_len = 500
     frames_dict = {}
@@ -95,12 +100,14 @@ def init_dictionaries(folders,data_folders):
     return vocabulary,data_dict,labels_dict,frames_dict
 
 def padding_audio(tensor,length):
+    # Pads the MFCCs with zeros
     i,j = tensor.shape
     objective = torch.zeros(i,length)
     objective[:,:j] = tensor
     return objective
 
 def text_to_torch(text_list,sent_len):
+    # Pads the triple text into padded tensor
     sentences = [torch.zeros(sent_len) for i in range(3)]
     for i in range(3):
         text = text_list[i]
@@ -108,6 +115,7 @@ def text_to_torch(text_list,sent_len):
     return torch.stack(sentences)
 
 def pretrain_embedding(vocabulary):
+    # Creates an embedding matrix based on glove.6B using the vocabulary dictionary.
     embedding_dic = {}
     pretrained_embedding = torch.randn((len(vocabulary)+1,300))
     with open('data/embedding/glove.6B.300d.txt',encoding='utf8') as file:
