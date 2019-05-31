@@ -20,19 +20,19 @@ parser.add_argument("--data_balancing",default=0,type=int,help="1 if balancing t
 parser.add_argument("--dropout",default=0.5,type=float,help="dropout rate for final layer, default 0.5, put 0 for no dropout")
 parser.add_argument("--optimizer",default="SGD",type=str,help="optimizer, Adam or SGD")
 
-parser.add_argument("--l_conv_channels", default=256, type=int, help="Number of 1-D convolutional channels.")
+parser.add_argument("--l_conv_channels", default=100, type=int, help="Number of 1-D convolutional channels.")
 parser.add_argument("--l_kernel_size", default=5, type=int, help="Convolution kernel size.")
 parser.add_argument("--l_output_dim", default=128, type=int, help="Model output dim = LSTM hidden dim.")
 parser.add_argument("--l_embedding",default=1,type=int,help="1 if using pretrained embedding")
 
 parser.add_argument("--a_num_frames", default=500, type=int, help="Number of frames per sentence.")
-parser.add_argument("--a_conv_channels", default=256, type=int, help="Number of 1-D convolutional channels.")
+parser.add_argument("--a_conv_channels", default=100, type=int, help="Number of 1-D convolutional channels.")
 parser.add_argument("--a_kernel_size", default=5, type=int, help="Convolution kernel size.")
 parser.add_argument("--a_mfcc", default=13, type=int, help="Number of MFCC components.")
 parser.add_argument("--a_output_dim", default=128, type=int, help="Model output dim = FC output dim.")
 
-parser.add_argument("--batch_size", default=64, type=int, help="Batch size to use during training.")
-parser.add_argument("--display_freq", default=292, type=int, help="Display frequency")
+parser.add_argument("--batch_size", default=50, type=int, help="Batch size to use during training.")
+parser.add_argument("--display_freq", default=250, type=int, help="Display frequency")
 parser.add_argument("--lr", default=0.001, type=float, help="Learning rate for optimizer")
 parser.add_argument("--log_file", default='', type=str, help="Log file")
 
@@ -69,10 +69,11 @@ class_sample_count = [2940, 10557,5361,5618,50224]
 class_weights = 1/torch.Tensor(class_sample_count)
 
 train_dataset,test_dataset,valid_dataset = datasets[0],datasets[1],datasets[2]
-train_weights = [class_weights[train_dataset.__getitem__(i)[2].item()] for i in range(len(train_dataset))]
+
 
 sampler = None
 if args.data_balancing==1:
+    train_weights = [class_weights[train_dataset.__getitem__(i)[2].item()] for i in range(len(train_dataset))]
     sampler = torch.utils.data.sampler.WeightedRandomSampler(train_weights,len(train_dataset))
 
 train_iterator = torch.utils.data.DataLoader(train_dataset,batch_size = batch_size,sampler = sampler)

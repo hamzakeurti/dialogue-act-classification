@@ -15,10 +15,14 @@ import json
 torch.manual_seed(1234)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--max_vocab_size", default=25000, type=int, help="vocabulary size.")
 parser.add_argument("--n_labels", default=5, type=int, help="Number of labels.")
 parser.add_argument("--epochs", default=25, type=int, help="Number of epochs.")
-parser.add_argument("--conv_channels", default=256, type=int, help="Number of 1-D convolutional channels.")
+parser.add_argument("--data_balancing",default=0,type=int,help="1 if balancing the training data")
+parser.add_argument("--dropout",default=0.5,type=float,help="dropout rate for final layer, default 0.5, put 0 for no dropout")
+parser.add_argument("--optimizer",default="SGD",type=str,help="optimizer, Adam or SGD")
+
+parser.add_argument("--embedding",default=1,type=int,help="1 if using pretrained embedding")
+parser.add_argument("--conv_channels", default=100, type=int, help="Number of 1-D convolutional channels.")
 parser.add_argument("--kernel_size", default=5, type=int, help="Convolution kernel size.")
 parser.add_argument("--embedding_dim", default=300, type=int, help="Size of word embedding.")
 parser.add_argument("--output_dim", default=128, type=int, help="Model output dim = LSTM hidden dim.")
@@ -39,13 +43,15 @@ folders,data_folders = utils.folders_info()
 
 # Initialize vocabulary
 vocabulary_filename = 'data/vocabulary.json'
-try:
-    vocabulary_file = open(vocabulary_filename,'r')
-    vocabulary = json.loads(vocabulary_file.read())
-except:
-    vocabulary,_,_,_ = utils.init_dictionaries(folders,data_folders)
-    with open(vocabulary_filename,'w') as vocabulary_file:
-            vocabulary_file.write(json.dumps(vocabulary))
+vocabulary = {}
+if args.embedding==1:
+    try:
+        vocabulary_file = open(vocabulary_filename,'r')
+        vocabulary = json.loads(vocabulary_file.read())
+    except:
+        vocabulary,_,_,_ = utils.init_dictionaries(folders,data_folders)
+        with open(vocabulary_filename,'w') as vocabulary_file:
+                vocabulary_file.write(json.dumps(vocabulary))
 
 # getting the pretrained embeddings
 pretrained_embeddings = utils.pretrain_embedding(vocabulary).to(device)
@@ -57,10 +63,12 @@ class_sample_count = [2940, 10557,5361,5618,50224]
 class_weights = 1/torch.Tensor(class_sample_count)
 
 train_dataset,test_dataset,valid_dataset = datasets[0],datasets[1],datasets[2]
-train_weights = [class_weights[train_dataset.__getitem__(i)[2].item()] for i in range(len(train_dataset))]
-sampler = torch.utils.data.sampler.WeightedRandomSampler(train_weights,len(train_dataset))
+sampler = None
+if args.data_balancing==1:
+    train_weights = [class_weights[train_dataset.__getitem__(i)[2].item()] for i in range(len(train_dataset))]
+    sampler = torch.utils.data.sampler.WeightedRandomSampler(train_weights,len(train_dataset))
 
-train_iterator = torch.utils.data.DataLoader(train_dataset,batch_size = batch_size) #,sampler = sampler
+train_iterator = torch.utils.data.DataLoader(train_dataset,batch_size = batch_size,sampler=sampler)
 # train_iterator = torch.utils.data.DataLoader(test_dataset,batch_size=args.batch_size)
 test_iterator = torch.utils.data.DataLoader(test_dataset)
 valid_iterator = torch.utils.data.DataLoader(valid_dataset)
@@ -73,14 +81,17 @@ output_dim = args.output_dim
 num_labels = args.n_labels
 
 model = nn.Sequential(
-    LexicalModel(vocab_size = vocab_size, output_dim=output_dim,device=device,init_embedding = pretrained_embeddings),
-    nn.Dropout(),
+    LexicalModel(vocab_size = vocab_size, output_dim=output_dim,device=device,init_embedding = pretrained_embeddings,dropout=args.dropout),
+    nn.Dropout(p=args.dropout),
     nn.ReLU(),
     nn.Linear(output_dim,num_labels)).to(device)
 
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=args.lr)
+if args.optimizer=='Adam':
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+else:
+    optimizer = optim.SGD(model.parameters(), lr=args.lr)
 # ----------------------------------------
 
 
