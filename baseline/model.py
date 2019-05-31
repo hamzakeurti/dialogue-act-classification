@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 
 class LexicalModel(nn.Module):
-    def __init__(self, vocab_size, embedding_dim = 300, conv_channels=256, output_dim=128, kernel_size=5, context_size=3,init_embedding = torch.randn((14600,300))):
+    def __init__(self, vocab_size, embedding_dim = 300, conv_channels=256, output_dim=128, kernel_size=5, context_size=3,init_embedding = torch.randn((14600,300)),dropout=0.5):
         super(LexicalModel, self).__init__()
         self.vocab_size = vocab_size          # sentence_length
         self.context_size = context_size    # Number of sentences provided as context including current sentence.
@@ -14,7 +14,8 @@ class LexicalModel(nn.Module):
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
 
         self.conv = nn.Conv1d(self.embedding_dim,self.conv_channels,self .kernel_size)
-
+        self.relu = nn.ReLU()
+        self.dropout=nn.Dropout(p=dropout)
         self.lstm = nn.LSTM(
             input_size = self.conv_channels,
             hidden_size = self.output_dim,
@@ -23,7 +24,7 @@ class LexicalModel(nn.Module):
         self.attention_fc = nn.Linear(self.output_dim, 1)
         
         self.embedding.weight.data.copy_(init_embedding)
-        self.embedding.weight.requires_grad = False
+        #self.embedding.weight.requires_grad = False
 
         
     def forward(self, text):
@@ -36,8 +37,8 @@ class LexicalModel(nn.Module):
         for i in range(self.context_size):
             conv_outputs.append(self.conv(embedded[i]))
         # conv_output: [num sent, batch size, num channels, sent len]
-        conv_output = torch.stack(conv_outputs)
-
+        conv_output = self.dropout(self.relu(torch.stack(conv_outputs)))
+        
         # 3. MaxPool the whole sentence into a single vector of dim num channels
         # max_output: [num sent, batch size, num_channels]
         max_output,_ = torch.max(conv_output,dim = 3)  #max over sentence length
@@ -63,7 +64,7 @@ class LexicalModel(nn.Module):
 
  
 class AcousticModel(nn.Module):
-    def __init__(self, num_frames = 500, mfcc=13, conv_channels=128, kernel_size = 5,output_dim = 128):
+    def __init__(self, num_frames = 500, mfcc=13, conv_channels=128, kernel_size = 5,output_dim = 128,dropout=0.5):
         super(AcousticModel, self).__init__()
         self.num_frames = num_frames
         self.mfcc = mfcc
@@ -72,7 +73,8 @@ class AcousticModel(nn.Module):
         self.output_dim = output_dim
 
         self.conv = nn.Conv1d(self.mfcc,self.conv_channels,self.kernel_size)
-
+        self.relu = nn.ReLU()
+        self.dropout=nn.Dropout(p=dropout)
         self.fc = nn.Linear(self.conv_channels, self.output_dim)
 
     def forward(self, input):
@@ -80,8 +82,8 @@ class AcousticModel(nn.Module):
 
         # 1. convolution
         # conv_output: [batch size, num channels, num frames]
-        conv_output = self.conv(input)
-
+        conv_output = self.relu(self.dropout(self.conv(input)))
+        
         # 2. MaxPool over all frames into a single vector of dim num channels
         # max_output: [batch size, num_channels]
         max_output,_ = torch.max(conv_output,dim = 2)  #max over sentence length

@@ -89,7 +89,8 @@ vocab_size = pretrained_embeddings.shape[0]
 lexical_model = LexicalModel(
         vocab_size = vocab_size, 
         output_dim=args.l_output_dim,
-        init_embedding = pretrained_embeddings
+        init_embedding = pretrained_embeddings,
+        dropout=args.dropout
         ).to(device)
 
 # ------------------ Acoustic Model ---------------------
@@ -98,7 +99,8 @@ acoustic_model = AcousticModel(
     mfcc = args.a_mfcc,
     conv_channels = args.a_conv_channels,
     kernel_size = args.a_kernel_size,
-    output_dim = args.a_output_dim
+    output_dim = args.a_output_dim,
+    dropout=args.dropout
     ).to(device)
 # ------------------- LAModel ------------------------------
 model = LexicalAcousticModel(lexical_model=lexical_model,acoustic_model=acoustic_model,num_labels = num_labels,dropout = args.dropout).to(device)
