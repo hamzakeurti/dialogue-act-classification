@@ -37,12 +37,12 @@ class LexicalModel(nn.Module):
         for i in range(self.context_size):
             conv_outputs.append(self.conv(embedded[i]))
         # conv_output: [num sent, batch size, num channels, sent len]
-        conv_output = self.dropout(self.relu(torch.stack(conv_outputs)))
+        conv_output = torch.stack(conv_outputs)
         
         # 3. MaxPool the whole sentence into a single vector of dim num channels
         # max_output: [num sent, batch size, num_channels]
         max_output,_ = torch.max(conv_output,dim = 3)  #max over sentence length
-
+        max_output = self.dropout(self.relu(max_output))
         # 4. LSTM the 3 sentences to determine attention 
         # lstm_output: [num sent, batch size, output dim]
         lstm_output, _ = self.lstm(max_output)
@@ -82,12 +82,12 @@ class AcousticModel(nn.Module):
 
         # 1. convolution
         # conv_output: [batch size, num channels, num frames]
-        conv_output = self.relu(self.dropout(self.conv(input)))
+        conv_output = self.conv(input)
         
         # 2. MaxPool over all frames into a single vector of dim num channels
         # max_output: [batch size, num_channels]
         max_output,_ = torch.max(conv_output,dim = 2)  #max over sentence length
-
+        max_output = self.relu(self.dropout(max_output))
         # 3. Fully connected layer
         # fc_output: [num sent, batch size, num_channels]
         fc_output = self.fc(max_output)
