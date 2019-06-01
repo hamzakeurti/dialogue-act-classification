@@ -72,8 +72,7 @@ model = nn.Sequential(
     ),
     nn.Dropout(p=args.dropout),
     nn.ReLU(),
-    nn.Linear(args.output_dim,args.n_labels))
-# ).to(device)
+    nn.Linear(args.output_dim,args.n_labels)).to(device)
 
  
 criterion = nn.CrossEntropyLoss()
@@ -90,6 +89,8 @@ def train(epoch, model, iterator, optimizer, criterion):
     model.train()
 
     for i, (audio,text,label) in enumerate(iterator):
+        audio = audio.to(device)
+        label = label.to(device)
         optimizer.zero_grad()
         predictions = model(audio)
 
@@ -118,6 +119,8 @@ def evaluate(model, iterator, criterion):
 
     with torch.no_grad():
         for (audio,text,label) in iterator:
+            audio = audio.to(device)
+            label = label.to(device)
             predictions = model(audio)
             loss = criterion(predictions, label.long())
 
@@ -142,9 +145,9 @@ for epoch in range(1, args.epochs + 1):
     if valid_acc > best_acc:
         best_acc = valid_acc
         best_epoch = epoch
-        torch.save(model.state_dict(), 'best-model-%s.pth' % args.cell_type)
+        torch.save(model.state_dict(), 'best-model_audio.pth')
 
 LOG_INFO('Test best model @ Epoch %02d' % best_epoch)
-model.load_state_dict(torch.load('best-model-%s.pth' % args.cell_type))
+model.load_state_dict(torch.load('best-model_audio.pth'))
 test_loss, test_acc = evaluate(model, test_iterator, criterion)
 LOG_INFO('Finally, test loss = %.4f, test acc = %.4f' % (test_loss, test_acc))

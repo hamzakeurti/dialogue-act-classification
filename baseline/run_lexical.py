@@ -81,7 +81,7 @@ output_dim = args.output_dim
 num_labels = args.n_labels
 
 model = nn.Sequential(
-    LexicalModel(vocab_size = vocab_size, output_dim=output_dim,device=device,init_embedding = pretrained_embeddings,dropout=args.dropout),
+    LexicalModel(vocab_size = vocab_size, output_dim=output_dim,init_embedding = pretrained_embeddings,dropout=args.dropout),
     nn.Dropout(p=args.dropout),
     nn.ReLU(),
     nn.Linear(output_dim,num_labels)).to(device)
@@ -158,9 +158,9 @@ for epoch in range(1, args.epochs + 1):
     if valid_acc > best_acc:
         best_acc = valid_acc
         best_epoch = epoch
-        torch.save(model.state_dict(), 'best-model_dropout.pth')
+        torch.save(model.state_dict(), 'best-model_lexical.pth')
 
 LOG_INFO('Test best model @ Epoch %02d' % best_epoch)
-model.load_state_dict(torch.load('best-model_dropout.pth'))
+model.load_state_dict(torch.load('best-model_lexical.pth'))
 test_loss, test_acc = evaluate(model, test_iterator, criterion)
 LOG_INFO('Finally, test loss = %.4f, test acc = %.4f' % (test_loss, test_acc))
